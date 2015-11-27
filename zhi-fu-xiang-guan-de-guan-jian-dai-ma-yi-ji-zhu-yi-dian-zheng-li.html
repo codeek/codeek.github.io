@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>支付相关的关键代码以及注意点整理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Codeek">
+
+    <!-- Le styles -->
+    <link rel="stylesheet" href="http://codeek.github.io/theme/css/bootstrap.min.css" type="text/css" />
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+      .tag-1 {
+        font-size: 13pt;
+      }
+      .tag-2 {
+        font-size: 10pt;
+      }
+      .tag-2 {
+        font-size: 8pt;
+      }
+      .tag-4 {
+        font-size: 6pt;
+     }
+    </style>
+    <link href="http://codeek.github.io/theme/css/bootstrap-responsive.min.css" rel="stylesheet">
+        <link href="http://codeek.github.io/theme/css/font-awesome.css" rel="stylesheet">
+
+    <link href="http://codeek.github.io/theme/css/pygments.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="http://codeek.github.io/theme/img/favicon.ico">
+    <link rel="apple-touch-icon" href="http://codeek.github.io/theme/images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="http://codeek.github.io/theme/images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="http://codeek.github.io/theme/images/apple-touch-icon-114x114.png">
+
+    <link href="http://codeek.github.io/" type="application/atom+xml" rel="alternate" title="Codeek ATOM Feed" />
+    <link href="http://codeek.github.io/feeds/rss.xml" type="application/atom+xml" rel="alternate" title="Codeek RSS Feed" />
+
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="http://codeek.github.io/index.html">Codeek </a>
+          <div class="nav-collapse">
+            <ul class="nav">
+                  <li><a href="http://codeek.github.io">Home</a></li>
+                  <li><a href="about.html">About</a></li>
+                          <li class="divider-vertical"></li>
+                  <li >
+                    <a href="http://codeek.github.io/category/android.html">
+						<i class="icon-folder-open icon-large"></i>Android
+					</a>
+                  </li>
+                  <li class="active">
+                    <a href="http://codeek.github.io/category/java-web.html">
+						<i class="icon-folder-open icon-large"></i>Java Web
+					</a>
+                  </li>
+                  <li >
+                    <a href="http://codeek.github.io/category/sui-bi.html">
+						<i class="icon-folder-open icon-large"></i>随笔
+					</a>
+                  </li>
+
+                          <ul class="nav pull-right">
+                                <li><a href="http://codeek.github.io/archives.html"><i class="icon-th-list"></i>Archives</a></li>
+                          </ul>
+
+            </ul>
+            <!--<p class="navbar-text pull-right">Logged in as <a href="#">username</a></p>-->
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="span9" id="content">
+<section id="content">
+        <article>
+                <header>
+                        <h1>
+                                <a href=""
+                                        rel="bookmark"
+                                        title="Permalink to 支付相关的关键代码以及注意点整理">
+                                        支付相关的关键代码以及注意点整理
+                                </a>
+                        </h1>
+                </header>
+                <div class="entry-content">
+                <div class="well">
+<footer class="post-info">
+<span class="label">Date</span>
+<abbr class="published" title="2015-11-27T00:00:00+08:00">
+        <i class="icon-calendar"></i>2015-11-27
+</abbr>
+<span class="label">By</span>
+<a href="http://codeek.github.io/author/codeek.html"><i class="icon-user"></i>Codeek</a>
+<span class="label">Category</span>
+<a href="http://codeek.github.io/category/java-web.html"><i class="icon-folder-open"></i>Java Web</a>.
+
+
+<span class="label">Tags</span>
+	<a href="http://codeek.github.io/tag/zhi-fu-xiang-guan.html"><i class="icon-tag"></i>支付相关</a>
+</footer><!-- /.post-info -->                </div>
+                <h3 id="_1">市面上主流的第三方支付方式</h3>
+<p>现在最主流的第三方支付方式应该是支付宝,微信支付,还有银联支付这三种,非主流的还有比如京东支付,以及下文需要提到的连连支付,电信公司的翼支付等等.前段时间的项目中用到了微信支付还有连连支付,翼支付这些小众的支付方式,个人觉得后面这两种支付方式略微奇葩,用的人真心少,然并卵,客户是老大,给钱的是大爷,所以只能吐槽一下,该写的代码还是要写,该读的文档还是要读.PS：本文所分享的微信支付以及其余支付都是针对<strong>APP支付,并且是服务端的代码</strong>,如果接下来的项目中会用到例如<strong>微信公众号支付</strong>,<strong>Js支付</strong>时会补充该文.</p>
+<h3 id="_2">支付大体流程概述</h3>
+<p><strong>做了这三种支付,个人感觉支付大体流程都是相同的,如下:</strong></p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%">1.App调用后台接口,传入第三方支付所需要的必要参数,服务端进行数据校验,确保数据真实性
+
+2.服务端获得App传递的参数,按照第三方支付的要求进行数据加签或者比如微信需要服务端主动请求微信服务器先获得预支付订单号,服务端进行数据入库
+
+3.服务端将处理好的必要的支付参数传递给App端,App调用第三方SDK进行支付
+</pre></div>
+
+
+<p>要说有区别的就是传参类型,回调接口传参方式不一样而已,我们需要注意的是如何保证自己系统的业务数据状态正常,还有就是安全问题,因为前段时间的项目被人攻击了,而自己写的代码严谨性不够,导致...........哎,记录下来留作警示吧.</p>
+<h3 id="app">微信APP支付步骤以及关键代码</h3>
+<p>无论做哪一种第三方支付,研读它的文档对于开发人员来说都是必须的,所以阅读第三方文档的能力对于IT这一行来说是至关重要的.
+<a href="https://pay.weixin.qq.com/wiki/doc/api/app.php?chapter=9_1" title="微信支付官方文档">微信支付官方文档</a></p>
+<p>读过App支付相关章节我们可以发现,微信支付首先需要服务端主动请求微信服务器,获取此次支付的预支付订单号,并且说明了选传必传的参数,下面只列出必传的参数,具体参数含义请阅读官方文档<strong>统一下单章节</strong>:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%">1.appid 公众账号ID    
+2.mch_id 商户号
+3.nonce_str 随机字符串
+4.sign 签名
+5.body 商品描述
+6.out_trade_no 商户订单号
+7.total_fee 总金额(单位为分)
+8.spbill_create_ip 终端IP
+9.notify_url 通知地址
+10.trade_type 交易类型
+</pre></div>
+
+
+<p>sign需要服务端将上面的参数按照字典表进行排序，组成如下的形式:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%">appid=XXX&amp;body=XXX&amp;mch_id=XXX......
+</pre></div>
+
+
+<p>接下来我们需要使用上一步组装好的字符串最后加上微信提供给你的appkey,假设上一步获得的字符串名称为paramStr:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%">paramStr&amp;key=YourAppKeyValue
+</pre></div>
+
+
+<p>最后我们将上面的字符串进行32位MD5加密并且转大写得到最终sign参数的值.最后将sign与上面所说的必填参数组装成xml文件发送给微信服务器,官方示例:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%">&lt;xml&gt;
+&lt;appid&gt;xxx&lt;/appid&gt;
+&lt;attach&gt;支付测试&lt;/attach&gt;
+&lt;body&gt;APP支付测试&lt;/body&gt;
+&lt;mch_id&gt;xxx&lt;/mch_id&gt;
+&lt;nonce_str&gt;xxxx&lt;/nonce_str&gt;
+&lt;notify_url&gt;xxx&lt;/notify_url&gt;
+&lt;out_trade_no&gt;xxxx&lt;/out_trade_no&gt;
+&lt;spbill_create_ip&gt;127.0.0.1&lt;/spbill_create_ip&gt;
+&lt;total_fee&gt;1&lt;/total_fee&gt;
+&lt;trade_type&gt;APP&lt;/trade_type&gt;
+&lt;sign&gt;xxxx&lt;/sign&gt;
+&lt;/xml&gt;
+</pre></div>
+
+
+<p>上述步骤的工具类以及http请求的代码这里就不分享了吧,实现起来很简单.请求发送过去之后,如果上述步骤中的参数没有错误的话,微信会返回给服务端一串xml,我们只需要获取其节点中的<strong>prepay_id</strong>字段的值,再参照文档中的<strong>调起支付接口章节</strong>中的必传参数列表:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%">1.appid 公众账号ID    
+2.partnerid 商户号
+3.prepayid 预支付交易会话ID
+4.package 暂填写固定值Sign=WXPay
+5.noncestr 随机字符串
+6.timestamp 时间戳
+7.sign 签名
+</pre></div>
+
+
+<p>这个接口中的sign的生成方法和<strong>统一下单接口</strong>方式一样.</p>
+<p>最后我们将<strong>调起支付接口</strong>中的参数传递给App端,App端的开发人员参照APP SDK开发文档使用服务器端传递的参数调起微信支付.</p>
+<p>App端支付成功之后,会有同步回调通知与异步回调通知,后台开发人员只关心异步回调通知,异步回调地址是我们在<strong>统一下单章节</strong>中参数notify_url所决定的.</p>
+<p>这里需要吐槽微信官方的是,官方文档中只写了返回的字段名称以及含义,并没有说明是以何种方式返回的,最后是通过debug的方式确定返回的方式,代码如下:</p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%">StringBuffer sb = new StringBuffer();
+InputStream is = request.getInputStream();
+InputStreamReader isr = new InputStreamReader(is);
+BufferedReader br = new BufferedReader(isr);
+String s = &quot;&quot;;
+while ((s = br.readLine()) != null) {
+       sb.append(s);
+}
+logger.info(&quot;******微信回调通知内容*****&quot; + sb.toString());
+</pre></div>
+
+
+<p>处理回调方法的时候需要注意的是需要对回调的内容<strong>进行验签处理</strong>,防止别人伪造数据,比如:实际支付了一分钱,随后伪造微信通知,而你收到通知如果不做校验继续执行了类似于充值的业务,损失就大了.</p>
+                </div><!-- /.entry-content -->
+                <div class="comments">
+                <h2>Comments !</h2>
+                        <div id="disqus_thread"></div>
+                        <script type="text/javascript">
+                           var disqus_identifier = "zhi-fu-xiang-guan-de-guan-jian-dai-ma-yi-ji-zhu-yi-dian-zheng-li.html";
+                           (function() {
+                                var dsq = document.createElement('script');
+                                dsq.type = 'text/javascript'; dsq.async = true;
+                                dsq.src = 'http://codeek.disqus.com/embed.js';
+                                (document.getElementsByTagName('head')[0] ||
+                                 document.getElementsByTagName('body')[0]).appendChild(dsq);
+                          })();
+                        </script>
+                </div>
+        </article>
+</section>
+        </div><!--/span-->
+
+                <div class="span3 well sidebar-nav" id="sidebar">
+<ul class="nav nav-list">
+
+<li class="nav-header"><h4><i class="icon-folder-close icon-large"></i>Categories</h4></li>
+<li>
+<a href="http://codeek.github.io/category/android.html">
+    <i class="icon-folder-open icon-large"></i>Android
+</a>
+</li>
+<li>
+<a href="http://codeek.github.io/category/java-web.html">
+    <i class="icon-folder-open icon-large"></i>Java Web
+</a>
+</li>
+<li>
+<a href="http://codeek.github.io/category/sui-bi.html">
+    <i class="icon-folder-open icon-large"></i>随笔
+</a>
+</li>
+
+<li class="nav-header"><h4><i class="icon-tags icon-large"></i>Tags</h4></li>
+
+
+</ul>        </div><!--/.well -->
+
+      </div><!--/row-->
+
+      <hr>
+
+      
+    </div>
+
+
+    <!--/.fluid-container-->
+
+
+<script type="text/javascript">
+    var disqus_shortname = 'codeek';
+    (function () {
+        var s = document.createElement('script'); s.async = true;
+        s.type = 'text/javascript';
+        s.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+</script>
+
+    <!-- Le javascript -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="http://codeek.github.io/theme/js/jquery-1.7.2.min.js"></script>
+    <script src="http://codeek.github.io/theme/js/bootstrap.min.js"></script>
+  </body>
+</html>

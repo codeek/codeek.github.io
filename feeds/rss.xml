@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Codeek</title><link>http://codeek.github.io/</link><description></description><atom:link href="http://codeek.github.io/feeds/rss.xml" rel="self"></atom:link><lastBuildDate>Fri, 27 Nov 2015 00:00:00 +0800</lastBuildDate><item><title>支付相关的关键代码以及注意点整理</title><link>http://codeek.github.io/zhi-fu-xiang-guan-de-guan-jian-dai-ma-yi-ji-zhu-yi-dian-zheng-li.html</link><description>&lt;h3 id="_1"&gt;市面上主流的第三方支付方式&lt;/h3&gt;
+&lt;p&gt;现在最主流的第三方支付方式应该是支付宝,微信支付,还有银联支付这三种,非主流的还有比如京东支付,以及下文需要提到的连连支付,电信公司的翼支付等等.前段时间的项目中用到了微信支付还有连连支付,翼支付这些小众的支付方式,个人觉得后面这两种支付方式略微奇葩,用的人真心少,然并卵,客户是老大,给钱的是大爷,所以只能吐槽一下,该写的代码还是要写,该读的文档还是要读.PS：本文所分享的微信支付以及其余支付都是针对&lt;strong&gt;APP支付,并且是服务端的代码&lt;/strong&gt;,如果接下来的项目中会用到例如&lt;strong&gt;微信公众号支付&lt;/strong&gt;,&lt;strong&gt;Js支付&lt;/strong&gt;时会补充该文.&lt;/p&gt;
+&lt;h3 id="_2"&gt;支付大体流程概述&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;做了这三种支付,个人感觉支付大体流程都是相同的,如下:&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;1.App调用后台接口,传入第三方支付所需要的必要参数,服务端进行数据校验,确保数据真实性
+
+2.服务端获得App传递的参数,按照第三方支付的要求进行数据加签或者比如微信需要服务端主动请求微信服务器先获得预支付订单号,服务端进行数据入库
+
+3.服务端将处理好的必要的支付参数传递给App端,App调用第三方SDK进行支付
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;要说有区别的就是传参类型,回调接口传参方式不一样而已,我们需要注意的是如何保证自己系统的业务数据状态正常,还有就是安全问题,因为前段时间的项目被人攻击了,而自己写的代码严谨性不够,导致...........哎,记录下来留作警示吧.&lt;/p&gt;
+&lt;h3 id="app"&gt;微信APP支付步骤以及关键代码&lt;/h3&gt;
+&lt;p&gt;无论做哪一种第三方支付,研读它的文档对于开发人员来说都是必须的,所以阅读第三方文档的能力对于IT这一行来说是至关重要的.
+&lt;a href="https://pay.weixin.qq.com/wiki/doc/api/app.php?chapter=9_1" title="微信支付官方文档"&gt;微信支付官方文档&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;读过App支付相关章节我们可以发现,微信支付首先需要服务端主动请求微信服务器,获取此次支付的预支付订单号,并且说明了选传必传的参数,下面只列出必传的参数,具体参数含义请阅读官方文档&lt;strong&gt;统一下单章节&lt;/strong&gt;:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;1.appid 公众账号ID    
+2.mch_id 商户号
+3.nonce_str 随机字符串
+4.sign 签名
+5.body 商品描述
+6.out_trade_no 商户订单号
+7.total_fee 总金额(单位为分)
+8.spbill_create_ip 终端IP
+9.notify_url 通知地址
+10.trade_type 交易类型
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;sign需要服务端将上面的参数按照字典表进行排序，组成如下的形式:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;appid=XXX&amp;amp;body=XXX&amp;amp;mch_id=XXX......
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;接下来我们需要使用上一步组装好的字符串最后加上微信提供给你的appkey,假设上一步获得的字符串名称为paramStr:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;paramStr&amp;amp;key=YourAppKeyValue
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;最后我们将上面的字符串进行32位MD5加密并且转大写得到最终sign参数的值.最后将sign与上面所说的必填参数组装成xml文件发送给微信服务器,官方示例:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;&amp;lt;xml&amp;gt;
+&amp;lt;appid&amp;gt;xxx&amp;lt;/appid&amp;gt;
+&amp;lt;attach&amp;gt;支付测试&amp;lt;/attach&amp;gt;
+&amp;lt;body&amp;gt;APP支付测试&amp;lt;/body&amp;gt;
+&amp;lt;mch_id&amp;gt;xxx&amp;lt;/mch_id&amp;gt;
+&amp;lt;nonce_str&amp;gt;xxxx&amp;lt;/nonce_str&amp;gt;
+&amp;lt;notify_url&amp;gt;xxx&amp;lt;/notify_url&amp;gt;
+&amp;lt;out_trade_no&amp;gt;xxxx&amp;lt;/out_trade_no&amp;gt;
+&amp;lt;spbill_create_ip&amp;gt;127.0.0.1&amp;lt;/spbill_create_ip&amp;gt;
+&amp;lt;total_fee&amp;gt;1&amp;lt;/total_fee&amp;gt;
+&amp;lt;trade_type&amp;gt;APP&amp;lt;/trade_type&amp;gt;
+&amp;lt;sign&amp;gt;xxxx&amp;lt;/sign&amp;gt;
+&amp;lt;/xml&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;上述步骤的工具类以及http请求的代码这里就不分享了吧,实现起来很简单.请求发送过去之后,如果上述步骤中的参数没有错误的话,微信会返回给服务端一串xml,我们只需要获取其节点中的&lt;strong&gt;prepay_id&lt;/strong&gt;字段的值,再参照文档中的&lt;strong&gt;调起支付接口章节&lt;/strong&gt;中的必传参数列表:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;1.appid 公众账号ID    
+2.partnerid 商户号
+3.prepayid 预支付交易会话ID
+4.package 暂填写固定值Sign=WXPay
+5.noncestr 随机字符串
+6.timestamp 时间戳
+7.sign 签名
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;这个接口中的sign的生成方法和&lt;strong&gt;统一下单接口&lt;/strong&gt;方式一样.&lt;/p&gt;
+&lt;p&gt;最后我们将&lt;strong&gt;调起支付接口&lt;/strong&gt;中的参数传递给App端,App端的开发人员参照APP SDK开发文档使用服务器端传递的参数调起微信支付.&lt;/p&gt;
+&lt;p&gt;App端支付成功之后,会有同步回调通知与异步回调通知,后台开发人员只关心异步回调通知,异步回调地址是我们在&lt;strong&gt;统一下单章节&lt;/strong&gt;中参数notify_url所决定的.&lt;/p&gt;
+&lt;p&gt;这里需要吐槽微信官方的是,官方文档中只写了返回的字段名称以及含义,并没有说明是以何种方式返回的,最后是通过debug的方式确定返回的方式,代码如下:&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;StringBuffer sb = new StringBuffer();
+InputStream is = request.getInputStream();
+InputStreamReader isr = new InputStreamReader(is);
+BufferedReader br = new BufferedReader(isr);
+String s = &amp;quot;&amp;quot;;
+while ((s = br.readLine()) != null) {
+       sb.append(s);
+}
+logger.info(&amp;quot;******微信回调通知内容*****&amp;quot; + sb.toString());
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;处理回调方法的时候需要注意的是需要对回调的内容&lt;strong&gt;进行验签处理&lt;/strong&gt;,防止别人伪造数据,比如:实际支付了一分钱,随后伪造微信通知,而你收到通知如果不做校验继续执行了类似于充值的业务,损失就大了.&lt;/p&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">Codeek</dc:creator><pubDate>Fri, 27 Nov 2015 00:00:00 +0800</pubDate><guid>tag:codeek.github.io,2015-11-27:zhi-fu-xiang-guan-de-guan-jian-dai-ma-yi-ji-zhu-yi-dian-zheng-li.html</guid><category>支付相关</category></item><item><title>安卓Activity基本用法总结</title><link>http://codeek.github.io/an-zhuo-activityji-ben-yong-fa-zong-jie.html</link><description>&lt;h4 id="intentactivity"&gt;Intent跳转Activity方式&lt;/h4&gt;
+&lt;p&gt;1.&lt;strong&gt;显式跳转以及传值&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;MainActivity关键代码 &lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;Intent startActIntent = new Intent(MainActivity.this, ThirdActivity.class);
+startActIntent.putExtra(&amp;quot;name&amp;quot;, &amp;quot;peter&amp;quot;);
+startActIntent.putExtra(&amp;quot;sex&amp;quot;, &amp;quot;male&amp;quot;);
+startActivity(startActIntent);
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;ThirdActivity关键代码&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;    //接收从FirstActicity传入的参数
+    Intent valueIntent = getIntent();
+    showText.setText(valueIntent.getStringExtra(&amp;quot;name&amp;quot;)+&amp;quot;,&amp;quot;+valueIntent.getStringExtra(&amp;quot;sex&amp;quot;));
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;2.&lt;strong&gt;隐式跳转&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;MainActivity关键代码&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;//此处设置的值为在AndroidManifest.xml中设置的SecondActivity的intent-filter中设置的action属性
+Intent intent = new Intent(&amp;quot;com.xt.firstapp.TEST_INTENT&amp;quot;);
+//如若不指定该category,则系统默认添加android.intent.category.DEFAULT
+intent.addCategory(&amp;quot;android.intent.category.DEFAULT&amp;quot;);
+startActivity(intent);
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;AndroidManifest关键代码&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;&amp;lt;activity android:name=&amp;quot;.activity.SecondActivity&amp;quot;&amp;gt;
+        &amp;lt;intent-filter&amp;gt;
+            &amp;lt;action android:name=&amp;quot;com.xt.firstapp.TEST_INTENT&amp;quot; /&amp;gt;
+            &amp;lt;category android:name=&amp;quot;android.intent.category.DEFAULT&amp;quot; /&amp;gt;
+        &amp;lt;/intent-filter&amp;gt;
+ &amp;lt;/activity&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;3.返回上一个Activity传递参数&lt;/p&gt;
+&lt;p&gt;MainActivity关键代码&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;  Intent resultIntent = new Intent(MainActivity.this, SecondActivity.class);
+  //requestcode设置为1
+  startActivityForResult(resultIntent, 1);
+
+ //如果要从上一个返回activity取得数据，则需要覆写该方法
+@Override
+protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    switch (requestCode) {
+        case 1:
+            if (RESULT_OK == resultCode) {
+                Log.d(&amp;quot;back_data-----&amp;quot;, data.getStringExtra(&amp;quot;back_data&amp;quot;));
+                Toast.makeText(MainActivity.this, data.getStringExtra(&amp;quot;back_data&amp;quot;), Toast.LENGTH_LONG).show();
+            }
+    }
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;SecondActivity关键代码&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;Intent backIntent=new Intent();
+backIntent.putExtra(&amp;quot;back_data&amp;quot;, &amp;quot;this is back data from second activity&amp;quot;);
+setResult(RESULT_OK, backIntent);
+finish();
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;4.Intent除了跳转之外另外的用法&lt;/p&gt;
+&lt;div class="codehilite" style="background: #f8f8f8"&gt;&lt;pre style="line-height: 125%"&gt;//Intent打开浏览器
+Intent viewIntent = new Intent(Intent.ACTION_VIEW);
+viewIntent.setData(Uri.parse(&amp;quot;https://www.baidu.com&amp;quot;));
+startActivity(viewIntent);
+
+//Intent拨打电话
+Intent dialIntent = new Intent(Intent.ACTION_DIAL);
+dialIntent.setData(Uri.parse(&amp;quot;tel:10086&amp;quot;));
+startActivity(dialIntent);
+&lt;/pre&gt;&lt;/div&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">Codeek</dc:creator><pubDate>Thu, 26 Nov 2015 00:00:00 +0800</pubDate><guid>tag:codeek.github.io,2015-11-26:an-zhuo-activityji-ben-yong-fa-zong-jie.html</guid><category>Android学习笔记</category></item><item><title>如梦初醒</title><link>http://codeek.github.io/ru-meng-chu-xing.html</link><description>&lt;h3 id="_1"&gt;圆梦&lt;/h3&gt;
+&lt;hr /&gt;
+&lt;p&gt;敲下第一行字,才想起距离写博客这个想法已经过了差不多一年时间.中间由于各种原因，一直未付诸于行动，直到今天，才算是正式破土动工,也算是圆了一直以来的一个&lt;strong&gt;梦想&lt;/strong&gt;.&lt;/p&gt;
+&lt;h3 id="_2"&gt;回忆&lt;/h3&gt;
+&lt;hr /&gt;
+&lt;p&gt;第一次接触博客记忆之中应该是在&lt;strong&gt;大学&lt;/strong&gt;求学期间，当时也是很佩服他的，从大一上学期开始就已经开始学习js了，光不说自学的效果如何,至少别人起步就比我们这些还沉浸在娱乐之中的人快了许多.随后的一段时间也见到他开通了自己的博客，弄了许多好玩的东西.自己当时对技术也是不怎么感兴趣的，只是单纯的佩服而已,到了大一下学期那会,安卓手机的流行，激发了我对刷机的兴趣，随后的一年多的时间里，自己对于刷机处于着迷的状态,基本上每天都会拿自己或同学的手机捣鼓到很久,逐渐成为了小有名声的刷机达人(羞涩....),也是从那时候开始，才逐渐明白技术的重要性,也逐渐的对安卓产生了兴趣,但在那时还没有上升到写代码的程度. &lt;/p&gt;
+&lt;p&gt;因为安卓程序是由java写的，所以大二下学期开始便开始了苦逼的&lt;strong&gt;自学java&lt;/strong&gt;历程，基本上每天除了上课就是写代码,虽然有些夸张，但却是真实的写照.随后的日子里,将书中的例子敲了个遍,再加上教学视频中老师所说的编程先从别人的代码中学习,摸索并发展出自己的思想,如果没有自己的思想就真的要变成了码农,不过在没有人指导的那个年代,以及身边无人有学习的欲望的时候，你会突然的发现自己是多么的孤独,但是，耐得住寂寞的才会成功,这话在毕业的时候才会深有感触,先且不谈工作有多舒服,至少是让父母在工作这方面不用操心.&lt;/p&gt;
+&lt;h3 id="_3"&gt;工作&lt;/h3&gt;
+&lt;hr /&gt;
+&lt;p&gt;从14年六月份毕业至今也有一年多的时间了,一直都在做&lt;strong&gt;JAVA WEB&lt;/strong&gt;开发.去年基本上是在每天加班中度过的,虽然很忙,但是自己却过得很充实,干劲十足.所以在别人眼中很苦逼的,自己却一点都不觉得有多辛苦.如果现在让我说一种自己选择这种工作的原因,我想首当其冲的应该要感谢编程给自己打来的成就感,这是一种促使自己前进的动力,所以在工作中保持这种源源不断的成就感是很重要的.&lt;/p&gt;
+&lt;p&gt;自己目前的状态，能够快速上手目前市面上所流行的框架，以及快速接入与使用第三方API.众所周知,中国的IT产业基本上都是业务类型的，程序员所要处理的最多的无非就是&lt;strong&gt;CRUD&lt;/strong&gt;操作,所以大部分要做的主要就是将业务熟悉,接下来写代码的事都好办.所幸的是我司项目并不那么单调,除了业务也有许多很有意思的东西.&lt;/p&gt;
+&lt;p&gt;举个例子,差不多是在去年的这个时候,我司有项目要用到推送的功能,于是项目经理要求我自己将百度推送相关文档研究一下.对于初出茅庐的我当时可是第一次尝试使用第三方&lt;strong&gt;API&lt;/strong&gt;,既兴奋也忐忑.&lt;strong&gt;兴奋&lt;/strong&gt;是由于前段时间也做了几个月的业务,现在能接第一次接触到自己没碰过的东西,自然而然会很兴奋.&lt;strong&gt;忐忑&lt;/strong&gt;也是很容易理解的,因为是&lt;strong&gt;首次&lt;/strong&gt;接触,难免会有一些担心.庆幸的是,最终还是很顺利的完成了这个任务.&lt;/p&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">Codeek</dc:creator><pubDate>Thu, 19 Nov 2015 00:00:00 +0800</pubDate><guid>tag:codeek.github.io,2015-11-19:ru-meng-chu-xing.html</guid><category>生活</category></item></channel></rss>
